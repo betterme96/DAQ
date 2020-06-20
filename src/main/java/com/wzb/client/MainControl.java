@@ -1,7 +1,6 @@
 package com.wzb.client;
 
 import com.wzb.client.DAQ.ReadOut;
-
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;

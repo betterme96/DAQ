@@ -1,4 +1,5 @@
 package com.wzb.client.DAQ;
+import com.sun.tools.javac.util.ArrayUtils;
 import com.wzb.client.helper.RingBuffer;
 
 import java.io.*;
@@ -19,23 +20,6 @@ public class ReadOut {
     }
 
     public void recvData(Socket socket, String filePath) throws IOException, InterruptedException {
-        /*
-        InputStream in = socket.getInputStream();
-        File file = new File(filePath);
-        FileOutputStream storeFile = new FileOutputStream(file);
-
-        byte[] data = new byte[1024];
-        int length = 0;
-        int total = 0;
-        while ((length = in.read(data)) != -1){
-            storeFile.write(data, total, length);
-            total += length;
-        }
-        System.out.println("recv suc!!");
-        storeFile.flush();
-        storeFile.close();
-         */
-
         Store store = new Store();
         RingBuffer ringbuf = new RingBuffer();
         new Thread(new DThread(socket, ringbuf, this, store, true, filePath)).start();
