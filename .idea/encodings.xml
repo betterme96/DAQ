@@ -3,8 +3,13 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/src/main/resources/result/res.txt" charset="GBK" />
     <file url="file://$PROJECT_DIR$/src/main/resources/source/test.txt" charset="GBK" />
-    <file url="file://$PROJECT_DIR$/src/sources/from/test.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/sources/from/1.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/sources/from/2.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/sources/from/3.txt" charset="GBK" />
     <file url="file://$PROJECT_DIR$/src/sources/res.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/sources/to/builder.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/sources/to/readout.txt" charset="GBK" />
     <file url="file://$PROJECT_DIR$/src/sources/to/res.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/src/sources/to/store.txt" charset="GBK" />
   </component>
 </project>

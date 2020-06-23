@@ -1,51 +1,52 @@
 package com.wzb.client;
 
+import com.sun.tools.internal.xjc.reader.Ring;
+import com.wzb.client.DAQ.Builder;
 import com.wzb.client.DAQ.ReadOut;
+import com.wzb.client.DAQ.Store;
+import com.wzb.client.helper.RingBuffer;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class MainControl {
     public static void main(String[] args) throws IOException, InterruptedException {
-        Socket socket = new Socket("127.0.0.1", 8001);
+        Socket commSocket = new Socket("127.0.0.1", 8000);
+        Socket dataSocket = new Socket("127.0.0.1", 8001);
 
-        RecvData rd = new RecvData(socket);
-        new Thread(new Monitor(socket, rd)).start();
-        rd.run();
+        RingBuffer[] ringBuffers = new RingBuffer[3];
+        int time = 3;
+        for(int i = 0; i < ringBuffers.length; ++i){
+            ringBuffers[i] = new RingBuffer(1024, time);
+            time *= 2;
+        }
+        Store store = new Store(ringBuffers[1]);
+        Builder builder = new Builder(ringBuffers[0], ringBuffers[1], store);
+        ReadOut rd = new ReadOut(dataSocket, ringBuffers[0], builder);
+
+        Monitor monitor = new Monitor(commSocket, rd, builder, store);
+        new Thread(monitor).start();
+        new Thread(rd).start();
+        new Thread(builder).start();
+        new Thread(store).start();
     }
 }
-
-class RecvData implements Runnable{
-    private Socket socket;
-    public volatile boolean start = false;
-
-    public RecvData(Socket socket){
-        this.socket = socket;
-    }
-    public void run() {
-        System.out.println("start:  " + start);
-        while (!start){
-
-        }
-        System.out.println("start:  " + start);
-        ReadOut rd = new ReadOut(socket);
-        try {
-            rd.recvData();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-
 class Monitor implements Runnable{
     private Socket socket;
-    private RecvData rd;
-    public Monitor(Socket socket, RecvData rd){
+    private ReadOut rd;
+    private Builder builder;
+    private Store store;
+
+    public Monitor(Socket socket, ReadOut rd, Builder builder, Store store){
         this.socket = socket;
         this.rd = rd;
+        this.builder = builder;
+        this.store = store;
     }
     public void run() {
-        try{OutputStream out = socket.getOutputStream();
+        try{
+            OutputStream out = socket.getOutputStream();
             Scanner scan = new Scanner(System.in);
 
             System.out.println("——————————————————");
@@ -62,6 +63,10 @@ class Monitor implements Runnable{
             out.write(comm);
 
             rd.start = true;
+            Thread.sleep(1000);
+            builder.start = true;
+            Thread.sleep(1000);
+            store.start = true;
 
             while (scan.nextInt() != 2){
             }
@@ -69,8 +74,11 @@ class Monitor implements Runnable{
             comm[1] = 0x11;
             out.write(comm);
             System.out.println("send stop!");
+
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 }
+
+

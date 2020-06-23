@@ -10,73 +10,18 @@ import java.util.Arrays;
 public class DataSend {
 
     public static void main(String[] args) throws IOException {
-        ServerSocket serverSock = new ServerSocket(8001);
-        System.out.println("server started, wating for connect...");
-        Socket socket = serverSock.accept();
+        ServerSocket commServerSocket = new ServerSocket(8000);
+        ServerSocket dataServerSocket = new ServerSocket(8001);
+        System.out.println("server started, waiting for connect...");
+
+        Socket commSocket = commServerSocket.accept();
+        Socket dataSocket = dataServerSocket.accept();
         //recv data from client
-        InputStream in = socket.getInputStream();
-        byte[] comm = new byte[2];
-        while(true){
-            //get start
-            if((in.read(comm, 0, 2) == 2) && (((comm[0] == 0x00) && comm[1] == 0x01))){
-                System.out.println("recv start");
-                break;
-            }
-        }
 
-        SendData sd = new SendData(socket);
-        new Thread(new Monitor(socket, sd)).start();
-        sd.run();
-    }
-}
-
-class SendData implements Runnable{
-    public volatile boolean exit = false;
-
-    private Socket socket;
-
-    public  SendData(Socket socket){
-        this.socket = socket;
-    }
-
-    public void run() {
-        System.out.println("senddata start");
-        try{
-            //send data to client
-            OutputStream out = socket.getOutputStream();
-            File file = new File("./src/sources/from/test.txt");
-            System.out.println("file len:  " + file.length());
-            if(!file.exists()){
-                System.out.println("file not exists!");
-            }
-            InputStream fileIn = new FileInputStream(file);
-            byte[] data = new byte[100];
-            int total = 0;
-            int curLen = 0;
-            System.out.println("exit:  "+exit);
-            while (!exit ){
-                /*
-                if(curLen == -1){
-                    fileIn.close();
-                    fileIn = new FileInputStream(file);
-                    curLen = fileIn.read(data);
-                }
-
-                 */
-                while((curLen = fileIn.read(data)) != -1 && !exit) {
-                    out.write(data, 0, curLen);
-                    total += curLen;
-                }
-                fileIn.close();;
-                fileIn = new FileInputStream(file);
-            }
-            System.out.println("bytes send:  " + total);
-            System.out.println("exit:  "+exit);
-            out.write("\nReceived the stop command".getBytes());
-            fileIn.close();
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        SendData sd = new SendData(dataSocket);
+        Monitor monitor = new Monitor(commSocket, sd);
+        new Thread(monitor).start();
+        new Thread(sd).start();
     }
 }
 
@@ -93,15 +38,91 @@ class Monitor implements Runnable{
         try {
             InputStream in = socket.getInputStream();
             byte[] comm = new byte[2];
-            while(in.read(comm) == -1){
-                Thread.sleep(100);
+            while(true){
+                //get start
+                if((in.read(comm, 0, 2) == 2) && (((comm[0] == 0x00) && comm[1] == 0x01))){
+                    System.out.println("recv start");
+                    Thread.sleep(1000);
+                    sd.start = true;
+                    break;
+                }
             }
+            in.read(comm);
             if(comm[0] == 0x00 && comm[1] == 0x11){
                 System.out.println("recv stop command");
                 sd.exit = true;
+                System.out.println("sd.exit:  "+ sd.exit);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
+
+
+class SendData implements Runnable{
+    public volatile boolean start = false;
+    public volatile boolean exit = false;
+
+    private Socket socket;
+
+    public  SendData(Socket socket){
+        this.socket = socket;
+    }
+
+    public void run() {
+        System.out.println("send data start");
+        try{
+
+            while(!start){
+                Thread.sleep(100);
+            }
+            //send data to client
+            OutputStream out = socket.getOutputStream();
+            int i = 1;
+            String filePath = "./src/sources/from/" + i + ".txt";
+            File file = new File(filePath);
+            System.out.println("file len:  " + file.length());
+            if(!file.exists()){
+                System.out.println("file not exists!");
+            }
+            InputStream fileIn = new FileInputStream(file);
+            byte[] data = new byte[100];
+            int total = 0;
+            int curLen = 0;
+            System.out.println("exit:  "+exit);
+            while (!exit){
+                curLen = fileIn.read(data);
+                if(curLen != -1){
+                    out.write(data, 0, curLen);
+                    Thread.sleep(100);
+                    total += curLen;
+                }else{
+                    i++;
+                    if(i < 4){
+                        fileIn.close();
+                        filePath = "./src/sources/from/" + i + ".txt";
+                        fileIn = new FileInputStream(new File(filePath));
+                    }
+                }
+            }
+            /*
+            while ( (curLen = fileIn.read(data)) != -1){
+                if(curLen != -1) {
+                    out.write(data, 0, curLen);
+                    total += curLen;
+                }
+
+            }
+
+             */
+            fileIn.close();
+            out.close();
+            System.out.println("bytes send:  " + total);
+            System.out.println("exit:  "+exit);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+}
+

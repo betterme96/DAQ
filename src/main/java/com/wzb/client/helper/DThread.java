@@ -18,31 +18,6 @@ public class DThread<T> implements Runnable{
         this.op = op;
     }
     public void run() {
-        switch (type){
-            case 'r':
-                ReadOut rd = (ReadOut) object;
-                try{
-                    if(op == 0){
-                        rd.getData();
-                    }else {
-                        rd.analyzeData();
-                    }
-                }catch (Exception e) {
-                    e.printStackTrace();
-                }
-                break;
-            case 's':
-                Store store = (Store)object;
-                try{
-                    if(op == 0){
-                        store.getData(ringBuf);
-                    }else {
-                        store.analyzeData();
-                    }
-                }catch (Exception e) {
-                    e.printStackTrace();
-                }
-                break;
-        }
+
     }
 }
