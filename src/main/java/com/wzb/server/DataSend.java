@@ -42,7 +42,6 @@ class Monitor implements Runnable{
                 //get start
                 if((in.read(comm, 0, 2) == 2) && (((comm[0] == 0x00) && comm[1] == 0x01))){
                     System.out.println("recv start");
-                    Thread.sleep(1000);
                     sd.start = true;
                     break;
                 }
@@ -95,7 +94,7 @@ class SendData implements Runnable{
                 curLen = fileIn.read(data);
                 if(curLen != -1){
                     out.write(data, 0, curLen);
-                    Thread.sleep(100);
+                    Thread.sleep(10);
                     total += curLen;
                 }else{
                     i++;
@@ -106,16 +105,7 @@ class SendData implements Runnable{
                     }
                 }
             }
-            /*
-            while ( (curLen = fileIn.read(data)) != -1){
-                if(curLen != -1) {
-                    out.write(data, 0, curLen);
-                    total += curLen;
-                }
 
-            }
-
-             */
             fileIn.close();
             out.close();
             System.out.println("bytes send:  " + total);

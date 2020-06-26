@@ -1,26 +1,42 @@
 package com.wzb.client.helper;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 public class RingBuffer{
 
     private final static int DEFAULT_SIZE  = 1024;
     public byte[] buffer;
-    private int pRead = 0;
-    private int pWrite = 1;
+    private int pRead;
+    private int pWrite;
     private int bufferSize;
     private int rbCapacity;
     private int time;
+    private ReentrantReadWriteLock pReadLock;
+    private ReentrantReadWriteLock pWriteLock;
+    private AtomicInteger count = new AtomicInteger();
+    private AtomicInteger modCount = new AtomicInteger();
 
     public RingBuffer(){
+        this.pRead = 0;
+        this.pWrite = 1;
         this.bufferSize = DEFAULT_SIZE;
         this.buffer = new byte[bufferSize];
-        rbCapacity = bufferSize;
+        this.rbCapacity = bufferSize;
         this.time = 3;
+        this.pReadLock = new ReentrantReadWriteLock();
+        this.pWriteLock = new ReentrantReadWriteLock();
     }
+
     public RingBuffer(int initSize,int time){
+        this.pRead = 0;
+        this.pWrite = 1;
         this.bufferSize = initSize;
         this.buffer = new byte[bufferSize];
         this.time=time;
         this.rbCapacity = bufferSize;
+        this.pReadLock = new ReentrantReadWriteLock();
+        this.pWriteLock = new ReentrantReadWriteLock();
     }
 
     public int canRead() {
@@ -33,49 +49,55 @@ public class RingBuffer{
         return rbCapacity - canRead()-2;
     }
 
-    public int write(byte[]data, int srcpos,int count) throws InterruptedException
+    public int write(byte[]data, int srcpos,int len, String module) throws InterruptedException
     {
-        int waitTime = 0;
-        if(count > canWrite()){
-            //System.out.printf("space can write: %d , space need write: %d \n",canWrite(),count);
-        }
-        while(count > canWrite()){
-            Thread.sleep(1000);
-            waitTime++;
-            //sop("read----sleep:"+i);
-            if(waitTime > time) {
-                System.out.println("Write Over Time");
-                return -1;
+        pWriteLock.writeLock().lock();
+        try{
+            int waitTime = 0;
+            if(len > canWrite()){
+                //System.out.printf("space can write: %d , space need write: %d \n",canWrite(),count);
             }
-        }
+            while(len > canWrite()){
+                System.out.printf(module + " space can write: %d , space need write: %d \n",canWrite(),len);
+                Thread.sleep(1000);
+                //waitTime++;
+                //sop("read----sleep:"+i);
+               // if(waitTime > 2*time) {
+               //     System.out.println(module + ":Write Over Time");
+               //     return -1;
+               // }
+            }
 
-        if (pRead <pWrite) {
-            int tailWriteCap = rbCapacity - pWrite;
+            if (pRead <pWrite) {
+                int tailWriteCap = rbCapacity - pWrite;
 
-            if (count <= tailWriteCap) {
-                System.arraycopy(data, srcpos, buffer ,pWrite, count);
-                pWrite += count;
-                if (pWrite == rbCapacity) {
+                if (len <= tailWriteCap) {
+                    System.arraycopy(data, srcpos, buffer ,pWrite, len);
+                    pWrite += len;
+                    if (pWrite == rbCapacity) {
+                        pWrite = 0;
+                    }
+                    return len;
+                } else {
+                    System.arraycopy(data,srcpos,buffer ,pWrite, tailWriteCap);
                     pWrite = 0;
-                }
-                return count;
+                    System.arraycopy(data, srcpos+tailWriteCap, buffer, pWrite, len-tailWriteCap);
+                    pWrite += len - tailWriteCap;}
             } else {
-                System.arraycopy(data,srcpos,buffer ,pWrite, tailWriteCap);
-                pWrite = 0;
-                return tailWriteCap + write(data, srcpos + tailWriteCap, count - tailWriteCap);
+                System.arraycopy(data,srcpos,buffer ,pWrite, len);
+                pWrite += len;
             }
-        } else {
-            System.arraycopy(data,srcpos,buffer ,pWrite, count);
-            pWrite += count;
-            return count;
+            count.incrementAndGet();
+            modCount.incrementAndGet();
+            return len;
+        }finally {
+            pWriteLock.writeLock().unlock();
         }
     }
 
     public int read(byte[] data,int srcpos ,int count, String module) throws InterruptedException {
         try{
-            if(count > canRead()) {
-                //System.out.printf("space can read: %d , space need read: % d \n",canRead(),count);
-            }
+            pReadLock.writeLock().lock();
             int waitTime = 0;
             while (count > canRead()) {
                 Thread.sleep(1000);
@@ -87,14 +109,16 @@ public class RingBuffer{
                         // System.out.printf("Read Over Time and read the last %d bytes data; \n", lastRead);
                         System.arraycopy(buffer, pRead+1, data, srcpos, lastRead);
                         pRead += lastRead;
+                        //pReadLock.writeLock().unlock();
                         return  lastRead;
                     }else{
                         System.out.println(module + ": Read Over Time and no data to read");
+                        //pReadLock.writeLock().unlock();
                         return -1;
                     }
                 }
             }
-
+           // pWriteLock.readLock().lock();
             if (pRead < pWrite) {
                 System.arraycopy(buffer, (pRead+1), data, srcpos, count);
                 pRead += count;
@@ -114,13 +138,16 @@ public class RingBuffer{
                     pRead += count-tailReadCap;
                 }
             }
+            modCount.incrementAndGet();
+
+           // pWriteLock.readLock().unlock();
+            pReadLock.writeLock().unlock();
+            return count;
         }catch (Exception e){
             System.out.printf("pRead+1 : %d, srcpos: %d, count: %d" , pRead+1, srcpos, count);
             e.printStackTrace();
             return -1;
         }
-
-        return count;
     }
 }
 

@@ -18,12 +18,12 @@ public class MainControl {
         RingBuffer[] ringBuffers = new RingBuffer[3];
         int time = 3;
         for(int i = 0; i < ringBuffers.length; ++i){
-            ringBuffers[i] = new RingBuffer(1024, time);
+            ringBuffers[i] = new RingBuffer(1024*3, time);
             time *= 2;
         }
-        Store store = new Store(ringBuffers[1]);
-        Builder builder = new Builder(ringBuffers[0], ringBuffers[1], store);
-        ReadOut rd = new ReadOut(dataSocket, ringBuffers[0], builder);
+        Store store = new Store(ringBuffers[1], 1);
+        Builder builder = new Builder(ringBuffers[0], ringBuffers[1], store, 1);
+        ReadOut rd = new ReadOut("127.0.0.1", "8000,8001", ringBuffers[0], builder, 1);
 
         Monitor monitor = new Monitor(commSocket, rd, builder, store);
         new Thread(monitor).start();
@@ -50,11 +50,17 @@ class Monitor implements Runnable{
             Scanner scan = new Scanner(System.in);
 
             System.out.println("——————————————————");
-            System.out.println("1.start");
-            System.out.println("2.stop");
+            System.out.println("1.config");
+            System.out.println("2.start");
+            System.out.println("2.start");
 
             while(scan.nextInt() != 1){
-                System.out.println("input \"1\" to start！");
+                System.out.println("input \"1\" to config！");
+            }
+
+
+            while(scan.nextInt() != 2){
+                System.out.println("input \"2\" to start！");
             }
 
             byte[] comm = new byte[2];
@@ -68,12 +74,15 @@ class Monitor implements Runnable{
             Thread.sleep(1000);
             store.start = true;
 
-            while (scan.nextInt() != 2){
+            while (scan.nextInt() != 3){
             }
             comm[0] = 0x00;
             comm[1] = 0x11;
             out.write(comm);
             System.out.println("send stop!");
+            rd.status = 3;
+            builder.status = 3;
+            store.status = 3;
 
         }catch (Exception e){
             e.printStackTrace();

@@ -1,26 +1,25 @@
 package com.wzb.client.DAQ;
 
-import com.wzb.client.helper.DThread;
 import com.wzb.client.helper.RingBuffer;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 
 public class Store implements Runnable{
     public static final char Ctype = 's';
     private RingBuffer curBuffer;
 
     public volatile boolean start = false;
-    public volatile boolean exit = false;
+    public volatile int status = 1;
 
-    public Store(RingBuffer curBuffer){
+    public Store(RingBuffer curBuffer, int status){
         this.curBuffer = curBuffer;
+        this.status = status;
     }
 
     public void run() {
         try {
+
             while (!start){
 
             }

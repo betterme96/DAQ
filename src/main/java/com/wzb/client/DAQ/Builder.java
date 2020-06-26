@@ -9,17 +9,20 @@ public class Builder implements Runnable{
     private RingBuffer curBuffer;
     private RingBuffer nextBuffer;
     private Store store;
-    public volatile boolean start = false;
-    public volatile boolean exit = false;
 
-    public Builder(RingBuffer curBuffer, RingBuffer nextBuffer, Store store){
+    public volatile boolean start = false;
+    public volatile int status;
+
+    public Builder(RingBuffer curBuffer, RingBuffer nextBuffer, Store store, int status){
         this.curBuffer = curBuffer;
         this.nextBuffer = nextBuffer;
         this.store = store;
+        this.status = status;
     }
 
     public void run() {
         try{
+
             while (!start){
 
             }
@@ -34,7 +37,6 @@ public class Builder implements Runnable{
                     break;
                 }
             }
-            store.exit = true;
             System.out.println("build data suc!!");
         }catch (Exception e){
 
@@ -47,7 +49,7 @@ public class Builder implements Runnable{
         check data
          */
         //if data meet the conditions, write to next buffer
-        return nextBuffer.write(data,0,length);
+        return nextBuffer.write(data,0,length, "Builder module");
         //System.out.println("----builder write----");
 
     }
