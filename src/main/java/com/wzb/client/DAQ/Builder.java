@@ -11,13 +11,11 @@ public class Builder implements Runnable{
     private Store store;
 
     public volatile boolean start = false;
-    public volatile int status;
 
-    public Builder(RingBuffer curBuffer, RingBuffer nextBuffer, Store store, int status){
+    public Builder(RingBuffer curBuffer, RingBuffer nextBuffer, Store store){
         this.curBuffer = curBuffer;
         this.nextBuffer = nextBuffer;
         this.store = store;
-        this.status = status;
     }
 
     public void run() {

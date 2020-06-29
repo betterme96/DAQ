@@ -10,11 +10,9 @@ public class Store implements Runnable{
     private RingBuffer curBuffer;
 
     public volatile boolean start = false;
-    public volatile int status = 1;
 
-    public Store(RingBuffer curBuffer, int status){
+    public Store(RingBuffer curBuffer){
         this.curBuffer = curBuffer;
-        this.status = status;
     }
 
     public void run() {

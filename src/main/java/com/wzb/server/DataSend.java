@@ -106,6 +106,7 @@ class SendData implements Runnable{
                 }
             }
 
+
             fileIn.close();
             out.close();
             System.out.println("bytes send:  " + total);

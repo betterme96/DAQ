@@ -9,36 +9,25 @@ import java.net.Socket;
 public class ReadOut implements Runnable{
     public volatile boolean start = false;
     public volatile boolean config = false;
-    public volatile int status = 1;
 
     private String ip;
     private String port;
     private RingBuffer curBuffer;
 
     private Builder builder;
-    public ReadOut(String ip, String port, RingBuffer ringBuffer, Builder builder, int status){
+    public ReadOut(String ip, String port, RingBuffer ringBuffer, Builder builder){
         this.ip = ip;
         this.port = port;
         this.curBuffer = ringBuffer;
         this.builder = builder;
-        this.status = status;
     }
 
     public void run() {
         try{
-            String[] ports = port.split(",");
-            Socket commSocket = new Socket(ip, Integer.parseInt(ports[0]));
-            Socket dataSocket = new Socket(ip, Integer.parseInt(ports[1]));
-
-            while (!config){
-
-            }
-            Config config = new Config();
-            config.sendConfig();
+            Socket dataSocket = new Socket(ip, Integer.parseInt(port));
 
             while (!start){
             }
-            this.status = 4;
             System.out.println("Readout module working......");
             InputStream in = dataSocket.getInputStream();
 
@@ -58,7 +47,6 @@ public class ReadOut implements Runnable{
         }
     }
 }
-
 
 
 
